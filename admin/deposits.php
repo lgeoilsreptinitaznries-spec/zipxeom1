@@ -90,6 +90,8 @@ foreach ($deposits as $d) {
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .btn-approve { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
         .btn-reject { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen p-6">
@@ -190,13 +192,10 @@ foreach ($deposits as $d) {
                                     </div>
                                 </td>
                             <td class="px-8 py-6">
-                                <div class="flex justify-center gap-2">
+                                <div class="flex justify-center gap-2" id="actions-<?php echo htmlspecialchars($d['id'] ?? ''); ?>">
                                     <?php if (isset($d['status']) && $d['status'] === 'pending'): ?>
-                                    <form method="POST" class="flex gap-2">
-                                        <input type="hidden" name="id" value="<?php echo htmlspecialchars($d['id'] ?? ''); ?>">
-                                        <button name="action" value="approve" class="px-4 py-2 btn-approve text-white rounded-xl hover:scale-105 transition-all text-[11px] font-black uppercase tracking-tighter shadow-lg shadow-green-500/20">Duyệt</button>
-                                        <button name="action" value="reject" class="px-4 py-2 btn-reject text-white rounded-xl hover:scale-105 transition-all text-[11px] font-black uppercase tracking-tighter shadow-lg shadow-red-500/20">Hủy</button>
-                                    </form>
+                                    <button onclick="approveDeposit('<?php echo htmlspecialchars($d['id'] ?? ''); ?>', 'approve')" class="px-4 py-2 btn-approve text-white rounded-xl hover:scale-105 transition-all text-[11px] font-black uppercase tracking-tighter shadow-lg shadow-green-500/20 approve-btn-<?php echo htmlspecialchars($d['id'] ?? ''); ?>">Duyệt</button>
+                                    <button onclick="approveDeposit('<?php echo htmlspecialchars($d['id'] ?? ''); ?>', 'reject')" class="px-4 py-2 btn-reject text-white rounded-xl hover:scale-105 transition-all text-[11px] font-black uppercase tracking-tighter shadow-lg shadow-red-500/20">Hủy</button>
                                     <?php else: ?>
                                     <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1">
                                         <?php echo getIcon('check', 'w-3 h-3'); ?> <?php echo ($d['status'] ?? '') === 'completed' ? 'Hoàn tất' : 'Đã hủy'; ?>
@@ -224,5 +223,81 @@ foreach ($deposits as $d) {
         </div>
         <?php endif; ?>
     </div>
+
+    <script>
+    let autoRefreshInterval = null;
+
+    async function approveDeposit(depositId, action) {
+        const btn = document.querySelector(`.approve-btn-${depositId}`);
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner">⟳</span>';
+
+        try {
+            const response = await fetch('/admin/api/approve-deposit.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: depositId, action: action })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Show success message
+                showNotification(data.message, 'success');
+                // Remove the row after 500ms
+                setTimeout(() => {
+                    const row = document.querySelector(`#actions-${depositId}`).closest('tr');
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => row.remove(), 300);
+                    // Update stats
+                    refreshDeposits();
+                }, 500);
+            } else {
+                showNotification(data.error || 'Lỗi', 'error');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            showNotification('Lỗi: ' + error.message, 'error');
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function showNotification(message, type) {
+        const container = document.querySelector('main');
+        const notif = document.createElement('div');
+        notif.className = `fixed top-4 right-4 p-4 rounded-2xl text-sm font-bold animate-bounce z-50 ${
+            type === 'success' ? 'bg-green-500/20 border border-green-500/20 text-green-500' : 'bg-red-500/20 border border-red-500/20 text-red-500'
+        }`;
+        notif.textContent = message;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 3000);
+    }
+
+    async function refreshDeposits() {
+        try {
+            const status = new URLSearchParams(window.location.search).get('status') || 'all';
+            const response = await fetch(`/admin/api/get-deposits.php?status=${status}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update stats
+                document.querySelectorAll('[data-stat-pending]')[0]?.textContent || '';
+                location.reload(); // Simple refresh for now
+            }
+        } catch (error) {
+            console.error('Refresh error:', error);
+        }
+    }
+
+    // Auto-refresh every 3 seconds
+    autoRefreshInterval = setInterval(refreshDeposits, 3000);
+
+    window.addEventListener('beforeunload', () => {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    });
+    </script>
 </body>
 </html>

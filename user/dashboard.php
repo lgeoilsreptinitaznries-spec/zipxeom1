@@ -252,6 +252,37 @@ if (!$currentUser) {
             </div>
         </div>
     </main>
+    <script>
+    // Load notifications from server
+    async function loadNotifications() {
+        try {
+            const response = await fetch('/user/api/get-notifications.php');
+            const data = await response.json();
+            if (data.success && data.notifications.length > 0) {
+                const container = document.getElementById('notifications-container');
+                data.notifications.slice(0, 3).forEach(notif => {
+                    const notifEl = document.createElement('div');
+                    notifEl.className = 'glass p-4 rounded-2xl border-l-4 border-l-green-500 flex justify-between items-center';
+                    notifEl.innerHTML = `
+                        <div>
+                            <p class="font-bold text-green-400">${notif.title}</p>
+                            <p class="text-sm text-slate-400">${notif.message}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-white">✕</button>
+                    `;
+                    container.appendChild(notifEl);
+                });
+            }
+        } catch (error) {
+            console.log('Notification load error:', error);
+        }
+    }
+    
+    // Load on page load
+    window.addEventListener('load', loadNotifications);
+    // Refresh every 10 seconds
+    setInterval(loadNotifications, 10000);
+    </script>
     <script src="../assets/js/transitions.js"></script>
     <script src="../assets/js/security.js"></script>
 </body>
