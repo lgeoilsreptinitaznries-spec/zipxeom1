@@ -498,7 +498,7 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
-                                setTimeout(() => window.location.href = 'dashboard.php', 3000);
+                                setTimeout(() => window.location.reload(), 5000);
                             } 
                             else if (data.status === 'cancelled') {
                                 statusChecked = true;
@@ -521,7 +521,7 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
-                                setTimeout(() => window.location.href = 'history.php', 3000);
+                                setTimeout(() => window.location.reload(), 5000);
                             } 
                             else if (data.status === 'expired') {
                                 statusChecked = true;
