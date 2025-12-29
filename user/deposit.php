@@ -535,36 +535,11 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                             
                             if (data.status === 'completed' || data.status === 'cancelled') {
                                 statusChecked = true;
-                                if (data.status === 'completed') {
-                                    document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
-                                } else {
-                                    document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
-                                }
+                                console.log('Status changed to:', data.status);
                                 
-                                // Update status badge
-                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
-                                if (statusBadge) {
-                                    statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
-                                    if (data.status === 'completed') {
-                                        statusBadge.parentElement.classList.add('bg-green-500/10', 'border-green-500/20');
-                                        statusBadge.classList.remove('text-yellow-500');
-                                        statusBadge.classList.add('text-green-500');
-                                        statusBadge.innerText = 'NẠP TIỀN THÀNH CÔNG';
-                                    } else {
-                                        statusBadge.parentElement.classList.add('bg-red-500/10', 'border-red-500/20');
-                                        statusBadge.classList.remove('text-yellow-500');
-                                        statusBadge.classList.add('text-red-400');
-                                        statusBadge.innerText = 'YÊU CẦU ĐÃ HỦY';
-                                    }
-                                    const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
-                                    if (pulse) {
-                                        pulse.classList.remove('bg-yellow-500', 'animate-pulse');
-                                        pulse.classList.add(data.status === 'completed' ? 'bg-green-500' : 'bg-red-500');
-                                    }
-                                }
-                                
-                                // Immediate reload when status changes
-                                location.replace(location.href.split('#')[0].split('?')[0] + '?success=1&t=' + Date.now());
+                                // Immediate reload with cache-busting
+                                const baseUrl = window.location.origin + window.location.pathname;
+                                window.location.href = baseUrl + '?success=1&t=' + Date.now();
                                 
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
