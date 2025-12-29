@@ -3,7 +3,11 @@ header('Content-Type: application/json');
 require_once '../../core/functions.php';
 require_once '../../core/auth.php';
 
-requireAdmin();
+if (!isAdminLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
 
 $deposits = readJSON('deposits');
 $statusFilter = $_GET['status'] ?? 'all';

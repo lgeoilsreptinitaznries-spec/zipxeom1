@@ -3,7 +3,12 @@ header('Content-Type: application/json');
 require_once '../../core/functions.php';
 require_once '../../core/auth.php';
 
-requireAdmin();
+// Check admin without redirect
+if (!isAdminLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

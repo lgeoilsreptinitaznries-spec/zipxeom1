@@ -3,7 +3,11 @@ header('Content-Type: application/json');
 require_once '../../core/functions.php';
 require_once '../../core/auth.php';
 
-requireUser();
+if (!isLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
 
 $notifications = readJSON('notifications');
 $user_id = $_SESSION['user_id'];
