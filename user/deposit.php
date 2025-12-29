@@ -88,7 +88,7 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
     $deposits = readJSON('deposits');
     $found = false;
     foreach ($deposits as $d) {
-        if ($d['id'] === $order['id']) {
+        if (isset($d['id']) && $d['id'] === $order['id']) {
             if ($d['status'] === 'pending' && strtotime($d['expires_at']) > time()) {
                 $order = $d;
                 $found = true;
