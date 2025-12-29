@@ -86,5 +86,38 @@
         "deposit_id": "DEP3TSZNTKU",
         "is_read": false,
         "created_at": "2025-12-29 16:47:28"
+    },
+    {
+        "id": "NOTIFXOIX6649",
+        "user_id": "USER454954",
+        "type": "deposit_approved",
+        "title": "Nạp tiền thành công",
+        "message": "Yêu cầu nạp tiền 500.000 VND đã được duyệt. Số dư của bạn: 5.600.000 VND",
+        "amount": 500000,
+        "deposit_id": "DEP9DSPD2CQ",
+        "is_read": false,
+        "created_at": "2025-12-29 16:47:42"
+    },
+    {
+        "id": "NOTIF3JE9DPRN",
+        "user_id": "USER454954",
+        "type": "deposit_approved",
+        "title": "Nạp tiền thành công",
+        "message": "Yêu cầu nạp tiền 500.000 VND đã được duyệt. Số dư của bạn: 6.100.000 VND",
+        "amount": 500000,
+        "deposit_id": "DEPOCPVN320",
+        "is_read": false,
+        "created_at": "2025-12-29 16:48:02"
+    },
+    {
+        "id": "NOTIFDIDEM82H",
+        "user_id": "USER454954",
+        "type": "deposit_approved",
+        "title": "Nạp tiền thành công",
+        "message": "Yêu cầu nạp tiền 500.000 VND đã được duyệt. Số dư của bạn: 6.600.000 VND",
+        "amount": 500000,
+        "deposit_id": "DEPQFPAE5XE",
+        "is_read": false,
+        "created_at": "2025-12-29 16:48:11"
     }
 ]

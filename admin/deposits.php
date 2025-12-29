@@ -225,8 +225,6 @@ foreach ($deposits as $d) {
     </div>
 
     <script>
-    let autoRefreshInterval = null;
-
     async function approveDeposit(depositId, action) {
         const btn = document.querySelector(`.approve-btn-${depositId}`);
         const originalText = btn.textContent;
@@ -240,18 +238,23 @@ foreach ($deposits as $d) {
                 body: JSON.stringify({ id: depositId, action: action })
             });
             
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const text = await response.text();
+            const data = JSON.parse(text);
+            
             if (data.success) {
-                // Show success message
                 showNotification(data.message, 'success');
                 // Remove the row after 500ms
                 setTimeout(() => {
                     const row = document.querySelector(`#actions-${depositId}`).closest('tr');
-                    row.style.opacity = '0';
-                    row.style.transition = 'opacity 0.3s ease';
-                    setTimeout(() => row.remove(), 300);
-                    // Update stats
-                    refreshDeposits();
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transition = 'opacity 0.3s ease';
+                        setTimeout(() => row.remove(), 300);
+                    }
                 }, 500);
             } else {
                 showNotification(data.error || 'Lỗi', 'error');
@@ -262,11 +265,11 @@ foreach ($deposits as $d) {
             showNotification('Lỗi: ' + error.message, 'error');
             btn.textContent = originalText;
             btn.disabled = false;
+            console.error('Approve error:', error);
         }
     }
 
     function showNotification(message, type) {
-        const container = document.querySelector('main');
         const notif = document.createElement('div');
         notif.className = `fixed top-4 right-4 p-4 rounded-2xl text-sm font-bold animate-bounce z-50 ${
             type === 'success' ? 'bg-green-500/20 border border-green-500/20 text-green-500' : 'bg-red-500/20 border border-red-500/20 text-red-500'
@@ -276,28 +279,10 @@ foreach ($deposits as $d) {
         setTimeout(() => notif.remove(), 3000);
     }
 
-    async function refreshDeposits() {
-        try {
-            const status = new URLSearchParams(window.location.search).get('status') || 'all';
-            const response = await fetch(`/admin/api/get-deposits.php?status=${status}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                // Update stats
-                document.querySelectorAll('[data-stat-pending]')[0]?.textContent || '';
-                location.reload(); // Simple refresh for now
-            }
-        } catch (error) {
-            console.error('Refresh error:', error);
-        }
-    }
-
-    // Auto-refresh every 3 seconds
-    autoRefreshInterval = setInterval(refreshDeposits, 3000);
-
-    window.addEventListener('beforeunload', () => {
-        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-    });
+    // Auto-refresh page every 4 seconds
+    setInterval(() => {
+        location.reload();
+    }, 4000);
     </script>
 </body>
 </html>

@@ -1,17 +1,23 @@
 <?php
-header('Content-Type: application/json');
+// Ensure no output before JSON
+ob_start();
+header('Content-Type: application/json; charset=utf-8');
+ini_set('display_errors', '0');
+
 require_once '../../core/functions.php';
 require_once '../../core/auth.php';
 
 // Check admin without redirect
 if (!isAdminLoggedIn()) {
     http_response_code(401);
+    ob_end_clean();
     echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
+    ob_end_clean();
     echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
@@ -22,6 +28,7 @@ $action = $input['action'] ?? null;
 
 if (!$id || !$action) {
     http_response_code(400);
+    ob_end_clean();
     echo json_encode(['error' => 'Missing parameters']);
     exit;
 }
@@ -79,6 +86,9 @@ foreach ($deposits as &$d) {
 
 writeJSON('deposits', $deposits);
 
+// Clean any buffered output
+ob_end_clean();
+
 if ($found) {
     echo json_encode([
         'success' => true,
@@ -90,4 +100,4 @@ if ($found) {
     http_response_code(404);
     echo json_encode(['error' => 'Deposit not found']);
 }
-?>
+exit;
