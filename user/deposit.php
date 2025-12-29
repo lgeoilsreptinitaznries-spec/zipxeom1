@@ -559,9 +559,11 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
                                 
+                                console.log('Deposit completed, reloading in 5s...');
                                 // Auto reload after 5 seconds
                                 setTimeout(() => {
-                                    window.location.reload();
+                                    console.log('Reloading now...');
+                                    window.location.href = window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + 'r=' + Math.random();
                                 }, 5000);
                             } 
                             else if (data.status === 'cancelled') {
@@ -586,9 +588,11 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
                                 
+                                console.log('Deposit cancelled, reloading in 5s...');
                                 // Auto reload after 5 seconds
                                 setTimeout(() => {
-                                    window.location.reload();
+                                    console.log('Reloading now...');
+                                    window.location.href = window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + 'r=' + Math.random();
                                 }, 5000);
                             } 
                             else if (data.status === 'expired') {
