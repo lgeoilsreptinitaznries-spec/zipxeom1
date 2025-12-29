@@ -52,9 +52,10 @@
     }
 
     // 5. Tự động chuyển hướng nếu phát hiện iframe lạ (chống clickjacking)
-    if (window.self !== window.top) {
-        window.top.location = window.self.location;
-    }
+    // Disabled for Replit development environment (iframe preview)
+    // if (window.self !== window.top) {
+    //     window.top.location = window.self.location;
+    // }
 
     console.log("%cSTOP!", "color: red; font-family: sans-serif; font-size: 4.5em; font-weight: bolder; text-shadow: #000 1px 1px;");
     console.log("%cĐây là tính năng trình duyệt dành cho nhà phát triển. Nếu ai đó bảo bạn sao chép-dán nội dung vào đây để 'hack' website, đó là một trò lừa đảo.", "font-family: sans-serif; font-size: 1.5em; font-weight: bolder;");
