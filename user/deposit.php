@@ -445,6 +445,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
                                 statusChecked = true;
                                 document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
                                 
+                                // Update status badge
+                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
+                                if (statusBadge) {
+                                    statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
+                                    statusBadge.parentElement.classList.add('bg-green-500/10', 'border-green-500/20');
+                                    statusBadge.classList.remove('text-yellow-500');
+                                    statusBadge.classList.add('text-green-500');
+                                    statusBadge.innerText = 'NẠP TIỀN THÀNH CÔNG';
+                                    const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
+                                    if (pulse) {
+                                        pulse.classList.remove('bg-yellow-500', 'animate-pulse');
+                                        pulse.classList.add('bg-green-500');
+                                    }
+                                }
+                                
                                 if (data.new_balance) {
                                     document.getElementById('current-balance').innerHTML = data.new_balance;
                                 }
@@ -456,15 +471,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
                             else if (data.status === 'cancelled') {
                                 statusChecked = true;
                                 document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
+                                
+                                // Update status badge
+                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
+                                if (statusBadge) {
+                                    statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
+                                    statusBadge.parentElement.classList.add('bg-red-500/10', 'border-red-500/20');
+                                    statusBadge.classList.remove('text-yellow-500');
+                                    statusBadge.classList.add('text-red-400');
+                                    statusBadge.innerText = 'YÊU CẦU ĐÃ HỦY';
+                                    const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
+                                    if (pulse) {
+                                        pulse.classList.remove('bg-yellow-500', 'animate-pulse');
+                                        pulse.classList.add('bg-red-500');
+                                    }
+                                }
+                                
                                 clearInterval(checkInterval);
+                                clearInterval(timerInterval);
+                                setTimeout(() => window.location.href = 'history.php', 3000);
                             } 
                             else if (data.status === 'expired') {
                                 statusChecked = true;
                                 document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Hết hạn';
+                                
+                                // Update status badge
+                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
+                                if (statusBadge) {
+                                    statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
+                                    statusBadge.parentElement.classList.add('bg-red-500/10', 'border-red-500/20');
+                                    statusBadge.classList.remove('text-yellow-500');
+                                    statusBadge.classList.add('text-red-400');
+                                    statusBadge.innerText = 'YÊU CẦU HẾT HẠN';
+                                    const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
+                                    if (pulse) {
+                                        pulse.classList.remove('bg-yellow-500', 'animate-pulse');
+                                        pulse.classList.add('bg-red-500');
+                                    }
+                                }
+                                
                                 clearInterval(checkInterval);
+                                clearInterval(timerInterval);
                             } 
                             else {
-                                document.getElementById('order-status').innerHTML = '<svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang chờ...';
+                                document.getElementById('order-status').innerHTML = '<svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Kiểm tra...';
+                                
+                                // Also update the top badge status if it's not completed
+                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
+                                if (statusBadge && statusBadge.innerText !== 'ĐANG CHỜ THANH TOÁN') {
+                                    statusBadge.innerText = 'ĐANG CHỜ THANH TOÁN';
+                                }
                             }
                         } catch (e) {
                             // Silent fail
