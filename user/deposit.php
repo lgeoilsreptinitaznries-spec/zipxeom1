@@ -66,11 +66,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
                 $deposits = readJSON('deposits');
                 $deposits[] = $order;
                 writeJSON('deposits', $deposits);
+                
+                // Set session to keep the order on refresh
+                $_SESSION['current_deposit_order'] = $order;
+                
                 $success = true;
+                header('Location: deposit.php?success=1');
+                exit;
             } else {
                 $error = 'Vui lòng chọn ngân hàng hợp lệ.';
             }
         }
+    }
+}
+
+// Check if showing success page from session
+if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
+    $order = $_SESSION['current_deposit_order'];
+    
+    // Verify if it's still pending and not expired
+    $deposits = readJSON('deposits');
+    $found = false;
+    foreach ($deposits as $d) {
+        if ($d['id'] === $order['id']) {
+            if ($d['status'] === 'pending' && strtotime($d['expires_at']) > time()) {
+                $order = $d;
+                $found = true;
+            }
+            break;
+        }
+    }
+    
+    if ($found) {
+        $success = true;
+    } else {
+        unset($_SESSION['current_deposit_order']);
+        header('Location: deposit.php');
+        exit;
     }
 }
 ?>
