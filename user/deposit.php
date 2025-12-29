@@ -400,75 +400,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
                     setTimeout(() => btn.innerHTML = original, 2000);
                 }
 
-                // Timer countdown - 20 minutes
-                let timeLeft = 20 * 60; // 1200 seconds
-                
-                function updateTimer() {
-                    if (timeLeft <= 0) {
-                        document.getElementById('expiry-timer').innerText = '00:00';
-                        return;
-                    }
-                    let mins = Math.floor(timeLeft / 60);
-                    let secs = timeLeft % 60;
-                    document.getElementById('expiry-timer').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                    timeLeft--;
+                // Wait for DOM to be ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initDeposit);
+                } else {
+                    initDeposit();
                 }
 
-                // Start timer immediately
-                updateTimer();
-                let timerInterval = setInterval(updateTimer, 1000);
-
-                // Status Polling - Check every 3 seconds
-                let orderId = '<?php echo $order['id']; ?>';
-                let statusChecked = false;
-                
-                let checkInterval = setInterval(async () => {
-                    if (statusChecked) return; // Stop if already completed
+                function initDeposit() {
+                    // Timer countdown - 20 minutes
+                    let timeLeft = 20 * 60; // 1200 seconds
                     
-                    try {
-                        const response = await fetch(`api/check-status.php?id=${orderId}`);
-                        if (!response.ok) {
-                            console.error('API error:', response.status);
+                    function updateTimer() {
+                        if (timeLeft <= 0) {
+                            document.getElementById('expiry-timer').innerText = '00:00';
                             return;
                         }
+                        let mins = Math.floor(timeLeft / 60);
+                        let secs = timeLeft % 60;
+                        document.getElementById('expiry-timer').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                        timeLeft--;
+                    }
+
+                    // Start timer immediately and every second
+                    updateTimer();
+                    let timerInterval = setInterval(updateTimer, 1000);
+
+                    // Status Polling - Check every 3 seconds
+                    let orderId = '<?php echo $order['id']; ?>';
+                    let statusChecked = false;
+                    
+                    let checkInterval = setInterval(async () => {
+                        if (statusChecked) return;
                         
-                        const data = await response.json();
-                        console.log('Status response:', data);
-                        
-                        if (data.status === 'completed') {
-                            statusChecked = true;
-                            document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
-                            
-                            // Update balance if returned from API
-                            if (data.new_balance) {
-                                document.getElementById('current-balance').innerHTML = data.new_balance;
-                                console.log('Balance updated to:', data.new_balance);
+                        try {
+                            const response = await fetch(`api/check-status.php?id=${orderId}`);
+                            if (!response.ok) {
+                                return;
                             }
                             
-                            clearInterval(checkInterval);
-                            clearInterval(timerInterval);
+                            const data = await response.json();
                             
-                            // Redirect after 3 seconds
-                            setTimeout(() => window.location.href = 'dashboard.php', 3000);
-                        } 
-                        else if (data.status === 'cancelled') {
-                            statusChecked = true;
-                            document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
-                            clearInterval(checkInterval);
-                        } 
-                        else if (data.status === 'expired') {
-                            statusChecked = true;
-                            document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Hết hạn';
-                            clearInterval(checkInterval);
-                        } 
-                        else {
-                            // Still pending
-                            document.getElementById('order-status').innerHTML = '<svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang chờ...';
+                            if (data.status === 'completed') {
+                                statusChecked = true;
+                                document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
+                                
+                                if (data.new_balance) {
+                                    document.getElementById('current-balance').innerHTML = data.new_balance;
+                                }
+                                
+                                clearInterval(checkInterval);
+                                clearInterval(timerInterval);
+                                setTimeout(() => window.location.href = 'dashboard.php', 3000);
+                            } 
+                            else if (data.status === 'cancelled') {
+                                statusChecked = true;
+                                document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
+                                clearInterval(checkInterval);
+                            } 
+                            else if (data.status === 'expired') {
+                                statusChecked = true;
+                                document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Hết hạn';
+                                clearInterval(checkInterval);
+                            } 
+                            else {
+                                document.getElementById('order-status').innerHTML = '<svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang chờ...';
+                            }
+                        } catch (e) {
+                            // Silent fail
                         }
-                    } catch (e) {
-                        console.error('Status check failed:', e);
-                    }
-                }, 3000);
+                    }, 3000);
+                }
             </script>
         <?php endif; ?>
     </main>

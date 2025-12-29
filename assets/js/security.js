@@ -34,14 +34,15 @@
     });
 
     // 3. Phát hiện DevTools đang mở bằng debugger
-    setInterval(() => {
-        const startTime = performance.now();
-        debugger;
-        const endTime = performance.now();
-        if (endTime - startTime > 100) {
-            window.location.reload();
-        }
-    }, 1000);
+    // Disabled to prevent interference with app timers
+    // setInterval(() => {
+    //     const startTime = performance.now();
+    //     debugger;
+    //     const endTime = performance.now();
+    //     if (endTime - startTime > 100) {
+    //         window.location.reload();
+    //     }
+    // }, 1000);
 
     // 4. Chặn console log để tránh lộ thông tin
     if (typeof console !== "undefined") {
