@@ -57,6 +57,11 @@ All data is stored in JSON files under the `data/` directory:
 - `keys.json` - Purchased activation keys
 
 ## Recent Changes
+- 2025-12-29: Fixed user deposit page (3 critical issues)
+  - ✅ Fixed "timer stuck at 19:59" - Changed from PHP datetime parsing to simple 20-minute countdown
+  - ✅ Fixed "balance showing 0 VND" - Added $currentUser loading at top of deposit.php
+  - ✅ Fixed "status not updating" - Improved AJAX polling every 3 seconds + proper JSON API response
+  
 - 2025-12-28: Initial setup for Replit environment
   - Reorganized project structure (includes/, user/, admin/, data/, assets/)
   - Created placeholder logo
