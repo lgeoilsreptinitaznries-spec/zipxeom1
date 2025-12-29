@@ -89,9 +89,17 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
     $found = false;
     foreach ($deposits as $d) {
         if (isset($d['id']) && $d['id'] === $order['id']) {
-            if ($d['status'] === 'pending' && strtotime($d['expires_at']) > time()) {
+            if (strtotime($d['expires_at']) > time()) {
                 $order = $d;
                 $found = true;
+                
+                // If order is completed or cancelled, we should still show it but without polling
+                if ($d['status'] === 'completed' || $d['status'] === 'cancelled') {
+                    $success = true;
+                    // Optionally clear session after some time or if navigated away
+                } else if ($d['status'] === 'pending') {
+                    $success = true;
+                }
             }
             break;
         }
@@ -302,39 +310,81 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Số dư hiện tại</p>
                                 <p class="text-2xl font-black text-gradient" id="current-balance"><?php echo formatMoney($currentUser['balance'] ?? 0); ?></p>
                             </div>
-                            <div class="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
-                                <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                                <span class="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Đang chờ thanh toán</span>
-                            </div>
+                            
+                            <?php if ($order['status'] === 'completed'): ?>
+                                <div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <span class="text-[10px] font-black text-green-500 uppercase tracking-widest">Nạp tiền thành công</span>
+                                </div>
+                            <?php elseif ($order['status'] === 'cancelled'): ?>
+                                <div class="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full border border-red-500/20">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    <span class="text-[10px] font-black text-red-400 uppercase tracking-widest">Yêu cầu đã hủy</span>
+                                </div>
+                            <?php else: ?>
+                                <div class="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                    <span class="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Đang chờ thanh toán</span>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="qr-container group relative mx-auto inline-block mb-6">
                             <?php 
                             $qr_url = "https://img.vietqr.io/image/{$order['bank_name']}-{$order['account_no']}-qr_only.png?amount={$order['amount']}&addInfo={$order['description']}&accountName=" . urlencode($order['account_name']);
                             ?>
-                            <img src="<?php echo $qr_url; ?>" alt="VietQR" class="w-64 h-64 rounded-xl relative z-10">
+                            <img src="<?php echo $qr_url; ?>" alt="VietQR" class="w-64 h-64 rounded-xl relative z-10 <?php echo ($order['status'] !== 'pending') ? 'opacity-50 grayscale' : ''; ?>">
                             <div class="absolute inset-0 border-4 border-yellow-500/20 rounded-[24px] pointer-events-none group-hover:border-yellow-500/50 transition-all z-20"></div>
                             
                             <!-- Scanner Effect -->
-                            <div class="absolute inset-x-4 top-4 h-0.5 bg-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.5)] animate-scan z-30"></div>
+                            <?php if ($order['status'] === 'pending'): ?>
+                                <div class="absolute inset-x-4 top-4 h-0.5 bg-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.5)] animate-scan z-30"></div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="space-y-2 mb-8">
-                            <h3 class="text-2xl font-black text-slate-100">Quét mã để nạp tiền</h3>
-                            <p class="text-sm text-slate-400">Hệ thống sẽ tự động cập nhật sau khi nhận được tiền</p>
+                            <?php if ($order['status'] === 'completed'): ?>
+                                <h3 class="text-2xl font-black text-green-500">Giao dịch thành công</h3>
+                                <p class="text-sm text-slate-400">Số dư của bạn đã được cập nhật</p>
+                            <?php elseif ($order['status'] === 'cancelled'): ?>
+                                <h3 class="text-2xl font-black text-red-500">Giao dịch đã bị hủy</h3>
+                                <p class="text-sm text-slate-400">Vui lòng liên hệ hỗ trợ nếu có thắc mắc</p>
+                            <?php else: ?>
+                                <h3 class="text-2xl font-black text-slate-100">Quét mã để nạp tiền</h3>
+                                <p class="text-sm text-slate-400">Hệ thống sẽ tự động cập nhật sau khi nhận được tiền</p>
+                            <?php endif; ?>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="glass p-4 rounded-2xl border border-white/5">
                                 <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Trạng thái</p>
-                                <p class="text-sm font-bold text-yellow-500 flex items-center justify-center gap-2" id="order-status">
-                                    <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    Kiểm tra...
+                                <p class="text-sm font-bold <?php echo ($order['status'] === 'completed') ? 'text-green-500' : (($order['status'] === 'cancelled') ? 'text-red-500' : 'text-yellow-500'); ?> flex items-center justify-center gap-2" id="order-status">
+                                    <?php if ($order['status'] === 'completed'): ?>
+                                        <?php echo getIcon("check", "w-4 h-4"); ?> Thành công
+                                    <?php elseif ($order['status'] === 'cancelled'): ?>
+                                        <?php echo getIcon("x", "w-4 h-4"); ?> Đã hủy
+                                    <?php else: ?>
+                                        <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Kiểm tra...
+                                    <?php endif; ?>
                                 </p>
                             </div>
                             <div class="glass p-4 rounded-2xl border border-white/5">
                                 <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Thời gian còn lại</p>
-                                <p class="text-sm font-bold text-slate-200" id="expiry-timer">19:59</p>
+                                <p class="text-sm font-bold text-slate-200" id="expiry-timer">
+                                    <?php 
+                                    if ($order['status'] !== 'pending') {
+                                        echo '00:00';
+                                    } else {
+                                        $remaining = strtotime($order['expires_at']) - time();
+                                        if ($remaining > 0) {
+                                            echo date('i:s', $remaining);
+                                        } else {
+                                            echo '00:00';
+                                        }
+                                    }
+                                    ?>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -440,9 +490,19 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                 }
 
                 function initDeposit() {
-                    // Timer countdown - 20 minutes
-                    let timeLeft = 20 * 60; // 1200 seconds
+                    // Status Polling - Check every 3 seconds
+                    let orderId = '<?php echo $order['id']; ?>';
+                    let currentStatus = '<?php echo $order['status']; ?>';
+                    let statusChecked = false;
                     
+                    if (currentStatus !== 'pending') {
+                        return; // Don't start timer or polling if not pending
+                    }
+
+                    // Timer countdown
+                    const expiresAt = new Date('<?php echo $order['expires_at']; ?>').getTime();
+                    let timeLeft = Math.max(0, Math.floor((expiresAt - new Date().getTime()) / 1000));
+
                     function updateTimer() {
                         if (timeLeft <= 0) {
                             document.getElementById('expiry-timer').innerText = '00:00';
@@ -498,7 +558,10 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
-                                setTimeout(() => window.location.reload(), 5000);
+                                // Set a flag to show success on reload
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 3000);
                             } 
                             else if (data.status === 'cancelled') {
                                 statusChecked = true;
@@ -521,7 +584,9 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
-                                setTimeout(() => window.location.reload(), 5000);
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 3000);
                             } 
                             else if (data.status === 'expired') {
                                 statusChecked = true;
