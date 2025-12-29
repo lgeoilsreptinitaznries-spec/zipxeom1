@@ -526,59 +526,30 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                         if (statusChecked) return;
                         
                         try {
-                            const response = await fetch(`api/check-status.php?id=${orderId}`);
-                            if (!response.ok) {
-                                return;
-                            }
+                            const response = await fetch(`api/check-status.php?id=${orderId}&t=${Date.now()}`);
+                            if (!response.ok) return;
                             
                             const data = await response.json();
+                            console.log('Poll result:', data.status);
                             
                             if (data.status === 'completed' || data.status === 'cancelled') {
                                 statusChecked = true;
-                                console.log('Status changed to:', data.status);
-                                
-                                // Immediate reload with cache-busting
-                                const baseUrl = window.location.origin + window.location.pathname;
-                                window.location.href = baseUrl + '?success=1&t=' + Date.now();
-                                
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
+                                
+                                // FORCE RELOAD IMMEDIATELY
+                                window.location.href = window.location.pathname + '?success=1&refresh=' + Date.now();
                             } 
                             else if (data.status === 'expired') {
                                 statusChecked = true;
-                                document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Hết hạn';
-                                
-                                // Update status badge
-                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
-                                if (statusBadge) {
-                                    statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
-                                    statusBadge.parentElement.classList.add('bg-red-500/10', 'border-red-500/20');
-                                    statusBadge.classList.remove('text-yellow-500');
-                                    statusBadge.classList.add('text-red-400');
-                                    statusBadge.innerText = 'YÊU CẦU HẾT HẠN';
-                                    const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
-                                    if (pulse) {
-                                        pulse.classList.remove('bg-yellow-500', 'animate-pulse');
-                                        pulse.classList.add('bg-red-500');
-                                    }
-                                }
-                                
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
-                            } 
-                            else {
-                                document.getElementById('order-status').innerHTML = '<svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Kiểm tra...';
-                                
-                                // Also update the top badge status if it's not completed
-                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
-                                if (statusBadge && statusBadge.innerText !== 'ĐANG CHỜ THANH TOÁN') {
-                                    statusBadge.innerText = 'ĐANG CHỜ THANH TOÁN';
-                                }
+                                window.location.reload();
                             }
                         } catch (e) {
-                            // Silent fail
+                            console.error('Polling error:', e);
                         }
-                    }, 3000);
+                    }, 2000); // Polling faster (2s)
                 }
             </script>
         <?php endif; ?>
