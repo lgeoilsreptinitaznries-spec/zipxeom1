@@ -385,7 +385,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
                     setTimeout(() => btn.innerHTML = original, 2000);
                 }
 
-                // Status Polling
+                // Calculate time remaining
+                const expiresAt = new Date('<?php echo $order['expires_at']; ?>').getTime();
+                let timeLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+
+                // Expiry Timer - Start immediately
+                function updateTimer() {
+                    if (timeLeft <= 0) {
+                        document.getElementById('expiry-timer').innerText = 'Hết hạn';
+                        return;
+                    }
+                    let mins = Math.floor(timeLeft / 60);
+                    let secs = timeLeft % 60;
+                    document.getElementById('expiry-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    timeLeft--;
+                }
+                updateTimer();
+                let timerInterval = setInterval(updateTimer, 1000);
+
+                // Status Polling - Check every 3 seconds
                 let orderId = '<?php echo $order['id']; ?>';
                 let checkInterval = setInterval(async () => {
                     try {
@@ -396,30 +414,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
                             document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
                             document.getElementById('current-balance').innerHTML = data.new_balance;
                             clearInterval(checkInterval);
+                            clearInterval(timerInterval);
                             setTimeout(() => window.location.href = 'dashboard.php', 3000);
                         } else if (data.status === 'cancelled') {
                             document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
+                            clearInterval(checkInterval);
+                        } else if (data.status === 'expired') {
+                            document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Hết hạn';
                             clearInterval(checkInterval);
                         } else {
                             document.getElementById('order-status').innerHTML = '<svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang chờ...';
                         }
                     } catch (e) {
-                        console.error('Status check failed');
+                        console.error('Status check failed:', e);
                     }
-                }, 1000);
-
-                // Expiry Timer
-                let timeLeft = 20 * 60;
-                let timerInterval = setInterval(() => {
-                    timeLeft--;
-                    let mins = Math.floor(timeLeft / 60);
-                    let secs = timeLeft % 60;
-                    document.getElementById('expiry-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        document.getElementById('expiry-timer').innerText = 'Hết hạn';
-                    }
-                }, 1000);
+                }, 3000);
             </script>
         <?php endif; ?>
     </main>
