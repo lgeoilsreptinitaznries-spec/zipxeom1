@@ -225,6 +225,9 @@ foreach ($deposits as $d) {
     </div>
 
     <script>
+    const currentStatus = new URLSearchParams(window.location.search).get('status') || 'all';
+    let lastDepositIds = new Set();
+
     async function approveDeposit(depositId, action) {
         const btn = document.querySelector(`.approve-btn-${depositId}`);
         const originalText = btn.textContent;
@@ -255,6 +258,8 @@ foreach ($deposits as $d) {
                         row.style.transition = 'opacity 0.3s ease';
                         setTimeout(() => row.remove(), 300);
                     }
+                    // Refresh deposits list
+                    setTimeout(refreshDepositsList, 300);
                 }, 500);
             } else {
                 showNotification(data.error || 'Lỗi', 'error');
@@ -279,10 +284,54 @@ foreach ($deposits as $d) {
         setTimeout(() => notif.remove(), 3000);
     }
 
-    // Auto-refresh page every 4 seconds
-    setInterval(() => {
-        location.reload();
-    }, 4000);
+    async function refreshDepositsList() {
+        try {
+            const response = await fetch(`/admin/api/get-deposits.php?status=${currentStatus}`);
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            if (!data.success) return;
+
+            const tbody = document.querySelector('table tbody');
+            if (!tbody) return;
+
+            // Check for new deposits
+            const currentIds = new Set(data.deposits.map(d => d.id));
+            let hasNewDeposits = false;
+
+            // Remove rows that are no longer in the list (completed/cancelled)
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const cell = row.querySelector('td span.font-mono');
+                if (cell) {
+                    const rowId = cell.textContent.replace('#', '').trim();
+                    if (!currentIds.has(rowId)) {
+                        row.style.opacity = '0.3';
+                    }
+                }
+            });
+
+            // Check for new deposits and show notification
+            data.deposits.forEach(deposit => {
+                if (!lastDepositIds.has(deposit.id)) {
+                    hasNewDeposits = true;
+                    showNotification(`📥 Nạp tiền mới: ${deposit.username} - ${deposit.amount.toLocaleString('vi-VN')} VND`, 'success');
+                }
+            });
+
+            lastDepositIds = currentIds;
+        } catch (error) {
+            console.error('Refresh error:', error);
+        }
+    }
+
+    // Initialize lastDepositIds with current deposits
+    document.querySelectorAll('table tbody tr td span.font-mono').forEach(cell => {
+        const id = cell.textContent.replace('#', '').trim();
+        if (id) lastDepositIds.add(id);
+    });
+
+    // Auto-refresh deposits list every 3 seconds (NO page reload)
+    setInterval(refreshDepositsList, 3000);
     </script>
 </body>
 </html>
