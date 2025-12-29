@@ -533,22 +533,33 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                             
                             const data = await response.json();
                             
-                            if (data.status === 'completed') {
+                            if (data.status === 'completed' || data.status === 'cancelled') {
                                 statusChecked = true;
-                                document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
+                                if (data.status === 'completed') {
+                                    document.getElementById('order-status').innerHTML = '<?php echo getIcon("check", "w-4 h-4 text-green-500"); ?> Thành công';
+                                } else {
+                                    document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
+                                }
                                 
                                 // Update status badge
                                 const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
                                 if (statusBadge) {
                                     statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
-                                    statusBadge.parentElement.classList.add('bg-green-500/10', 'border-green-500/20');
-                                    statusBadge.classList.remove('text-yellow-500');
-                                    statusBadge.classList.add('text-green-500');
-                                    statusBadge.innerText = 'NẠP TIỀN THÀNH CÔNG';
+                                    if (data.status === 'completed') {
+                                        statusBadge.parentElement.classList.add('bg-green-500/10', 'border-green-500/20');
+                                        statusBadge.classList.remove('text-yellow-500');
+                                        statusBadge.classList.add('text-green-500');
+                                        statusBadge.innerText = 'NẠP TIỀN THÀNH CÔNG';
+                                    } else {
+                                        statusBadge.parentElement.classList.add('bg-red-500/10', 'border-red-500/20');
+                                        statusBadge.classList.remove('text-yellow-500');
+                                        statusBadge.classList.add('text-red-400');
+                                        statusBadge.innerText = 'YÊU CẦU ĐÃ HỦY';
+                                    }
                                     const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
                                     if (pulse) {
                                         pulse.classList.remove('bg-yellow-500', 'animate-pulse');
-                                        pulse.classList.add('bg-green-500');
+                                        pulse.classList.add(data.status === 'completed' ? 'bg-green-500' : 'bg-red-500');
                                     }
                                 }
                                 
@@ -559,40 +570,9 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
                                 
-                                console.log('Deposit completed, reloading in 5s...');
-                                // Auto reload after 5 seconds
+                                // Direct reload after 5s
                                 setTimeout(() => {
-                                    console.log('Reloading now...');
-                                    window.location.href = window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + 'r=' + Math.random();
-                                }, 5000);
-                            } 
-                            else if (data.status === 'cancelled') {
-                                statusChecked = true;
-                                document.getElementById('order-status').innerHTML = '<?php echo getIcon("x", "w-4 h-4 text-red-500"); ?> Đã hủy';
-                                
-                                // Update status badge
-                                const statusBadge = document.querySelector('.bg-yellow-500\\/10 span.text-\\[10px\\]');
-                                if (statusBadge) {
-                                    statusBadge.parentElement.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
-                                    statusBadge.parentElement.classList.add('bg-red-500/10', 'border-red-500/20');
-                                    statusBadge.classList.remove('text-yellow-500');
-                                    statusBadge.classList.add('text-red-400');
-                                    statusBadge.innerText = 'YÊU CẦU ĐÃ HỦY';
-                                    const pulse = statusBadge.parentElement.querySelector('.animate-pulse');
-                                    if (pulse) {
-                                        pulse.classList.remove('bg-yellow-500', 'animate-pulse');
-                                        pulse.classList.add('bg-red-500');
-                                    }
-                                }
-                                
-                                clearInterval(checkInterval);
-                                clearInterval(timerInterval);
-                                
-                                console.log('Deposit cancelled, reloading in 5s...');
-                                // Auto reload after 5 seconds
-                                setTimeout(() => {
-                                    console.log('Reloading now...');
-                                    window.location.href = window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + 'r=' + Math.random();
+                                    location.replace(location.href.split('#')[0].split('?')[0] + '?success=1&t=' + Date.now());
                                 }, 5000);
                             } 
                             else if (data.status === 'expired') {
