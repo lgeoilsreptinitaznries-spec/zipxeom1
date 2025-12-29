@@ -563,17 +563,11 @@ if (isset($_GET['success']) && isset($_SESSION['current_deposit_order'])) {
                                     }
                                 }
                                 
-                                if (data.new_balance) {
-                                    document.getElementById('current-balance').innerHTML = data.new_balance;
-                                }
+                                // Immediate reload when status changes
+                                location.replace(location.href.split('#')[0].split('?')[0] + '?success=1&t=' + Date.now());
                                 
                                 clearInterval(checkInterval);
                                 clearInterval(timerInterval);
-                                
-                                // Direct reload after 5s
-                                setTimeout(() => {
-                                    location.replace(location.href.split('#')[0].split('?')[0] + '?success=1&t=' + Date.now());
-                                }, 5000);
                             } 
                             else if (data.status === 'expired') {
                                 statusChecked = true;
